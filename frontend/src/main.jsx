@@ -9,7 +9,7 @@ import ownerImg from './assets/eng-kirollos.png';
 
 const resolveApiBase = () => {
   const raw = import.meta.env.VITE_API_URL?.trim();
-  if (!raw) return '/api';
+  if (!raw) return import.meta.env.DEV ? 'http://localhost:5000/api' : '/api';
   const normalized = raw.replace(/\/$/, '');
   return normalized.endsWith('/api') ? normalized : `${normalized}/api`;
 };
