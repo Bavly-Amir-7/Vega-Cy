@@ -31,9 +31,9 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
-var adminUsername = Environment.GetEnvironmentVariable("VEGACY_ADMIN_USERNAME") ?? "wagdy-Vegacy";
-var adminPassword = Environment.GetEnvironmentVariable("VEGACY_ADMIN_PASSWORD") ?? "wagdy-Vegacy";
-var adminToken = Environment.GetEnvironmentVariable("VEGACY_ADMIN_TOKEN") ?? "ChangeThisToken123!";
+var adminUsername = NormalizeSecret(Environment.GetEnvironmentVariable("VEGACY_ADMIN_USERNAME")) ?? "wagdy-Vegacy";
+var adminPassword = NormalizeSecret(Environment.GetEnvironmentVariable("VEGACY_ADMIN_PASSWORD")) ?? "wagdy-Vegacy";
+var adminToken = NormalizeSecret(Environment.GetEnvironmentVariable("VEGACY_ADMIN_TOKEN")) ?? "ChangeThisToken123!";
 
 app.UseSwagger();
 app.UseSwaggerUI();
@@ -52,7 +52,11 @@ app.MapPost("/api/admin/login", (AdminLoginDto dto) =>
     if (string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Password))
         return Results.BadRequest("Username and password are required.");
 
-    if (dto.Username != adminUsername || dto.Password != adminPassword)
+    var providedUsername = dto.Username.Trim();
+    var providedPassword = dto.Password.Trim();
+
+    if (!string.Equals(providedUsername, adminUsername, StringComparison.OrdinalIgnoreCase) ||
+        !string.Equals(providedPassword, adminPassword, StringComparison.Ordinal))
         return Results.Unauthorized();
 
     return Results.Ok(new { token = adminToken });
@@ -125,4 +129,10 @@ static IResult? EnsureAdminAuthorized(HttpContext http, string adminToken)
         return Results.Unauthorized();
 
     return null;
+}
+
+static string? NormalizeSecret(string? value)
+{
+    if (string.IsNullOrWhiteSpace(value)) return null;
+    return value.Trim().Trim('"', '\'');
 }
