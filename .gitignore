@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+.env.*
+
+# .NET build artifacts
+bin/
+obj/
+
+# IDE/system
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
