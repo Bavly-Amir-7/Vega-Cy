@@ -10,9 +10,23 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "https://localhost:5173", "http://localhost:5174", "https://localhost:5174")
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        var configuredOrigins = (Environment.GetEnvironmentVariable("VEGACY_CORS_ORIGINS") ?? string.Empty)
+            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        var localOrigins = new[] { "http://localhost:5173", "https://localhost:5173", "http://localhost:5174", "https://localhost:5174" };
+        var allowedOrigins = configuredOrigins.Length > 0 ? configuredOrigins : localOrigins;
+
+        policy.SetIsOriginAllowed(origin =>
+        {
+            if (allowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase))
+                return true;
+
+            if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                return false;
+
+            return uri.Host.EndsWith(".vercel.app", StringComparison.OrdinalIgnoreCase);
+        })
+        .AllowAnyHeader()
+        .AllowAnyMethod();
     });
 });
 

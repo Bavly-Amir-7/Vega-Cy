@@ -7,7 +7,13 @@ import './styles.css';
 import logo from './assets/vega-logo.jpg';
 import ownerImg from './assets/eng-kirollos.png';
 
-const API = 'http://localhost:5000/api';
+const resolveApiBase = () => {
+  const raw = import.meta.env.VITE_API_URL?.trim();
+  if (!raw) return '/api';
+  const normalized = raw.replace(/\/$/, '');
+  return normalized.endsWith('/api') ? normalized : `${normalized}/api`;
+};
+const API = resolveApiBase();
 const TOKEN_KEY = 'vegacy_admin_token';
 const LANG_KEY = 'vegacy_lang';
 const THEME_KEY = 'vegacy_theme';
@@ -77,22 +83,26 @@ function App() {
   const login = async (e) => {
     e.preventDefault();
     setError('');
-    const response = await fetch(`${API}/admin/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: adminUsername, password: adminPassword })
-    });
+    try {
+      const response = await fetch(`${API}/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: adminUsername, password: adminPassword })
+      });
 
-    if (!response.ok) {
+      if (!response.ok) {
+        setError(t.loginFailed);
+        return;
+      }
+
+      const data = await response.json();
+      localStorage.setItem(TOKEN_KEY, data.token);
+      setAdminToken(data.token);
+      setAdminUsername('');
+      setAdminPassword('');
+    } catch {
       setError(t.loginFailed);
-      return;
     }
-
-    const data = await response.json();
-    localStorage.setItem(TOKEN_KEY, data.token);
-    setAdminToken(data.token);
-    setAdminUsername('');
-    setAdminPassword('');
   };
 
   const logout = () => {
